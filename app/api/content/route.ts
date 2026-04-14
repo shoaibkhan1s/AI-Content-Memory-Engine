@@ -7,6 +7,8 @@ import { createContentSchema } from "@/lib/utils/validators";
 import { detectContentType, detectPlatform } from "@/lib/utils/helpers";
 import ReviewState from "@/lib/db/models/ReviewState";
 import ActivityLog from "@/lib/db/models/ActivityLog";
+import { waitUntil } from "@vercel/functions";
+import { processContent } from "@/lib/ai/processContent";
 
 
 
@@ -165,6 +167,8 @@ await ReviewState.create({
       contentId: contentItem._id,
       metadata: { type: detectedType, platform: sourcePlatform },
     });
+
+    waitUntil(processContent(contentItem._id.toString(),user.userId).catch(err=> console.error("Background AI processing failed:", err)))
 
  return NextResponse.json(
       { success: true, data: contentItem },

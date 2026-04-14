@@ -8,6 +8,8 @@ import { buildProcessingPrompt } from "./prompts";
 // Measures how similar two vectors (embeddings) are
 // Returns 1.0 = identical meaning, 0.0 = completely different
 function cosineSimilarity(a: number[], b: number[]): number {
+
+      if (!a || !b || a.length !== b.length) return 0;
   const dot = a.reduce((sum, val, i) => sum + val * b[i], 0);
   const magA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
   const magB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
@@ -47,9 +49,14 @@ async function fetchUrlMetadata(url: string): Promise<{ title?: string; descript
 // ─── Generate Embedding ───────────────────────────────────
 // Converts text into a vector of 768 numbers representing its "meaning"
 async function generateEmbedding(text: string): Promise<number[]> {
-  const model = getEmbeddingModel();
-  const result = await model.embedContent(text);
-  return result.embedding.values;
+  try {
+    const model = getEmbeddingModel();
+    const result = await model.embedContent(text);
+    return result.embedding?.values || [];
+  } catch (err) {
+    console.error("Embedding failed:", err);
+    return [];
+  }
 }
 
 // ─── Main Processing Function ─────────────────────────────
@@ -90,7 +97,17 @@ export async function processContent(contentId: string, userId: string) {
     const model = getGeminiModel();
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
-    const aiData = JSON.parse(responseText);
+    
+    let aiData: any;
+    try {
+      // Clean the response: remove markdown code blocks if present
+      const cleaned = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+      aiData = JSON.parse(cleaned);
+    } catch {
+      console.error("Gemini Raw Response:", responseText); // Log raw for debugging
+      throw new Error("Gemini returned invalid JSON structure");
+    }
+    if (!aiData) throw new Error("Empty AI response");
 
     // Step 5: Generate embedding for semantic search
     // We embed the summary + tags for best semantic representation

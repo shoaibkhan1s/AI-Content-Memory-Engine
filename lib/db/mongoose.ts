@@ -1,29 +1,35 @@
-import mongoose from 'mongoose'
-
+import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI!;
 
-let cached = (global as any).mongoose as {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
+if (!MONGODB_URI) {
+  throw new Error('Please define the MONGODB_URI environment variable inside .env');
 }
 
+let cached = (global as any).mongoose;
+
 if (!cached) {
-  cached = (global as any).mongoose = {
-    conn: null,
-    promise: null
-  };
+  cached = (global as any).mongoose = { conn: null, promise: null };
 }
 
 export async function connectDB() {
   if (cached.conn) return cached.conn;
+
   if (!cached.promise) {
+    console.log('⏳ Attempting to connect to MongoDB...');
+    
     cached.promise = mongoose.connect(MONGODB_URI, {
-      dbName: 'ai-memory-engine',
       bufferCommands: false,
+    }).then((m) => {
+      console.log('✅ Connected to MongoDB Atlas');
+      return m;
+    }).catch((err) => {
+      console.error('❌ MongoDB Connection Error:', err.message);
+      cached.promise = null;
+      throw err;
     });
   }
+
   cached.conn = await cached.promise;
-  console.log(cached.conn);
   return cached.conn;
 }
