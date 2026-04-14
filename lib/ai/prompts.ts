@@ -19,35 +19,67 @@ export function buildProcessingPrompt(data: {
     .join("\n");       
 
   return `
-You are an intelligent content analysis AI for a personal knowledge management app.
-
-Analyze the following ${data.type} content and return ONLY a valid JSON object.
+You are an intelligent AI content classification system for a knowledge management app.
+Your task is to analyze content and return a STRICT hierarchical structure as a JSON object.
 
 ${context}
 
-Return exactly this JSON structure:
+IMPORTANT RULES (MUST FOLLOW):
+1. You MUST ALWAYS return BOTH:
+   * "category" → a broad domain
+   * "subcategory" → a specific topic inside that category
+
+2. Category rules:
+   * Must be high-level (e.g., Coding, Finance, Health, Productivity, Education, Business, Science, Design, Personal, General)
+   * NEVER use specific topics like "DSA", "React", "Stocks" as a category
+
+3. Subcategory rules:
+   * Must be specific and belong under the category
+   * Examples:
+     * Binary Search → category: Coding, subcategory: DSA
+     * React Hooks → category: Coding, subcategory: Web Development
+     * Stock Investing → category: Finance, subcategory: Stock Market
+
+4. STRICT MAPPING (VERY IMPORTANT):
+   * If topic is DSA → category MUST be "Coding"
+   * If topic is Web Development → category MUST be "Coding"
+   * If topic is Machine Learning → category MUST be "Coding"
+   * If topic is Stocks/Investing → category MUST be "Finance"
+   * NEVER return "DSA" as category
+
+5. Consistency rules:
+   * Capitalize properly (e.g., "Coding", "DSA")
+   * Avoid duplicates like "coding", "CODING"
+   * Keep naming consistent
+
+6. Dynamic system behavior:
+   * Assume categories and subcategories are NOT pre-created
+   * Always generate appropriate new ones if needed
+   * Do NOT restrict to fixed lists
+
+7. Even if content is unclear:
+   * Still return best possible category and subcategory
+
+OUTPUT FORMAT (STRICT JSON ONLY):
 {
   "title": "A clear, specific title for this content (max 80 chars)",
   "summary": "A useful 2-4 sentence summary of the core idea or key insight",
-  "category": "Exactly one of: Coding, Mathematics, Finance, Health, Recipes, Business, Productivity, Education, Self-improvement, Entertainment, Science, Design, Personal, General",
-  "subcategory": "A specific subcategory within the category (e.g., if category=Coding then subcategory=Python, DSA, or Web Development)",
+  "category": "Broad category",
+  "subcategory": "Specific subcategory",
   "tags": ["tag1", "tag2", "tag3"],
   "questions": [
     "Specific recall question 1?",
-    "Specific recall question 2?",
-    "Specific recall question 3?"
+    "Specific recall question 2?"
   ],
   "importanceScore": 7,
   "keyInsight": "The single most important takeaway in one sentence",
   "quality": "useful"
 }
 
-Rules:
-- Return ONLY the JSON object, no explanation, no markdown
-- tags: 3-6 specific lowercase tags (e.g. "binary-search" not "programming")
-- questions: 2-5 questions that test real understanding
-- importanceScore: integer 1-10 (10 = life-changing, 1 = trivial)
-- quality: exactly one of "useful", "vague", "low-value"
-- If content is unclear or too short, still return valid JSON with best guesses
+DO NOT:
+* Add markdown
+* Add explanations
+* Skip fields
+ONLY RETURN VALID JSON.
 `;
 }

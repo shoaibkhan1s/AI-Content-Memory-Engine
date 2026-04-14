@@ -16,10 +16,28 @@ import ContentCard from "@/components/ContentCard";
 
 export default function LibraryPage() {
   const [items, setItems] = useState([]);
+  const [categoriesList, setCategoriesList] = useState<string[]>(["all"]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [view, setView] = useState<"grid" | "list">("grid");
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("/api/categories");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setCategoriesList(["all", ...data.data]);
+      }
+    } catch(err) {
+      console.error("Categories fetch error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
 
   const fetchLibrary = async () => {
     setLoading(true);
@@ -45,7 +63,17 @@ export default function LibraryPage() {
     return () => clearTimeout(timer);
   }, [search, category]);
 
-  const categories = ["all", "Coding", "DSA", "Finance", "Health", "Business", "Productivity", "Education"];
+  // Transform flat items into hierarchical structure: Map<Category, Map<Subcategory, Item[]>>
+  const groupedItems = items.reduce((acc: Record<string, Record<string, any[]>>, item: any) => {
+    const catName = item.category || "Uncategorized";
+    const subCatName = item.subcategory || "General";
+    
+    if (!acc[catName]) acc[catName] = {};
+    if (!acc[catName][subCatName]) acc[catName][subCatName] = [];
+    
+    acc[catName][subCatName].push(item);
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-10 pb-20">
@@ -92,7 +120,7 @@ export default function LibraryPage() {
            <div className="p-2 bg-slate-900 rounded-lg border border-slate-800 mr-1 shrink-0">
               <Filter className="w-4 h-4 text-slate-500" />
            </div>
-           {categories.map((cat) => (
+           {categoriesList.map((cat) => (
              <button
                key={cat}
                onClick={() => setCategory(cat)}
@@ -116,25 +144,45 @@ export default function LibraryPage() {
             <span className="text-xs font-black text-slate-500 uppercase tracking-[0.3em]">Syncing Vault...</span>
           </div>
         ) : items.length > 0 ? (
-          <motion.div 
-            layout
-            className={`grid gap-6 ${view === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3' : 'grid-cols-1'}`}
-          >
+          <div className="space-y-16">
             <AnimatePresence>
-              {items.map((item: any) => (
-                <motion.div
-                  key={item._id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <ContentCard item={item} />
+               {Object.entries(groupedItems).map(([catName, subcategories]) => (
+                <motion.div key={catName} layout className="space-y-8">
+                  {/* Category Header */}
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-2xl font-black text-white">{catName}</h2>
+                    <div className="flex-1 h-px bg-slate-800"></div>
+                  </div>
+
+                  {/* Subcategories */}
+                  <div className="space-y-10 pl-2 lg:pl-6">
+                    {Object.entries(subcategories).map(([subCatName, subItems]) => (
+                      <div key={`${catName}-${subCatName}`} className="space-y-5">
+                        <h3 className="text-sm font-black tracking-widest text-indigo-400 uppercase flex items-center gap-2">
+                           <span className="w-2 h-2 rounded-full bg-indigo-500"></span> {subCatName}
+                        </h3>
+                        
+                        <div className={`grid gap-6 ${view === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                          {subItems.map((item: any) => (
+                            <motion.div
+                              key={item._id}
+                              layout
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.9 }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <ContentCard item={item} />
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </motion.div>
               ))}
             </AnimatePresence>
-          </motion.div>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 bg-slate-900/40 rounded-[3rem] border border-slate-800/50 border-dashed space-y-6">
             <div className="w-20 h-20 bg-slate-800 rounded-[2.5rem] flex items-center justify-center border border-slate-700">

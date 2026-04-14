@@ -87,13 +87,13 @@ export default function SaveForm() {
           <p className="text-slate-400 font-medium text-sm ml-1">Paste any URL and let the engine extract the essence.</p>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-6">
-          <div className="relative group">
-            <LinkIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-400 transition-all duration-300" />
+        <form onSubmit={handleSave} className="space-y-6 relative z-30">
+          <div className="relative group z-30">
+            <LinkIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-400 transition-all duration-300 z-10" />
             <input
               type="url"
               placeholder="Paste YouTube, Instagram, or Web Link..."
-              className="input-base w-full pl-14 h-16 text-lg tracking-tight font-medium shadow-inner"
+              className="input-base w-full pl-14 h-16 text-lg tracking-tight font-medium shadow-inner relative z-30 bg-slate-800/80 focus:bg-slate-800 border-slate-600 focus:border-indigo-400 text-white placeholder-slate-400"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               disabled={loading}
