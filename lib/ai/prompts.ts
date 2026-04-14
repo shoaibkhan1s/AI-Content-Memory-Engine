@@ -29,8 +29,8 @@ Return exactly this JSON structure:
 {
   "title": "A clear, specific title for this content (max 80 chars)",
   "summary": "A useful 2-4 sentence summary of the core idea or key insight",
-  "category": "Exactly one of: Coding, DSA, Mathematics, Finance, Health, Recipes, Business, Productivity, Education, Self-improvement, Entertainment, Science, Design, Personal, General",
-  "subcategory": "A specific subcategory within the category (e.g., if category=Coding then subcategory=Python or DSA or Web Development)",
+  "category": "Exactly one of: Coding, Mathematics, Finance, Health, Recipes, Business, Productivity, Education, Self-improvement, Entertainment, Science, Design, Personal, General",
+  "subcategory": "A specific subcategory within the category (e.g., if category=Coding then subcategory=Python, DSA, or Web Development)",
   "tags": ["tag1", "tag2", "tag3"],
   "questions": [
     "Specific recall question 1?",

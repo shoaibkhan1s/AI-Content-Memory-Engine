@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { 
   Play, 
   Camera, 
@@ -10,7 +11,8 @@ import {
   Code,
   Calendar,
   Layers,
-  Brain
+  Brain,
+  ExternalLink
 } from "lucide-react";
 
 interface ContentCardProps {
@@ -25,6 +27,7 @@ interface ContentCardProps {
     processingStatus: string;
     importanceScore: number;
     sourcePlatform?: string;
+    sourceUrl?: string; // Added to enable Visit Source link
   };
 }
 
@@ -78,10 +81,11 @@ export default function ContentCard({ item }: ContentCardProps) {
 
       {/* Content */}
       <div className="flex-1 space-y-3">
-        <h3 className="text-lg font-black text-slate-100 group-hover:text-white transition-colors leading-tight line-clamp-2">
-          {item.title}
-        </h3>
-        
+        <Link href={`/content/${item._id}`}>
+          <h3 className="text-lg font-black text-slate-100 hover:text-indigo-400 transition-colors leading-tight line-clamp-2">
+            {item.title}
+          </h3>
+        </Link>
         <p className="text-sm text-slate-400 font-medium leading-relaxed line-clamp-3">
           {item.summary || "No summary available yet. Analysis might be in progress."}
         </p>
@@ -111,13 +115,27 @@ export default function ContentCard({ item }: ContentCardProps) {
               ))}
            </div>
            
-           <motion.button
-             whileHover={{ scale: 1.05, x: 2 }}
-             whileTap={{ scale: 0.95 }}
-             className="text-[11px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5 group/btn"
-           >
-              Open Engine <Brain className="w-3 h-3 group-hover/btn:scale-125 transition-transform" />
-           </motion.button>
+           <div className="flex items-center gap-3">
+             {item.sourceUrl && (
+               <a 
+                 href={item.sourceUrl} 
+                 target="_blank" 
+                 rel="noopener noreferrer"
+                 className="text-[11px] font-black text-slate-400 hover:text-white uppercase tracking-widest flex items-center gap-1.5 transition-colors"
+               >
+                 Source <ExternalLink className="w-3 h-3" />
+               </a>
+             )}
+             <Link href={`/content/${item._id}`}>
+               <motion.button
+                 whileHover={{ scale: 1.05, x: 2 }}
+                 whileTap={{ scale: 0.95 }}
+                 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5 group/btn"
+               >
+                  Open Engine <Brain className="w-3 h-3 group-hover/btn:scale-125 transition-transform" />
+               </motion.button>
+             </Link>
+           </div>
         </div>
       </div>
     </motion.div>
