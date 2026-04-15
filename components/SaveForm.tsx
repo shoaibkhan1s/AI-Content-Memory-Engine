@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link as LinkIcon, Plus, Sparkles, AlertCircle, CheckCircle2, Wand2 } from "lucide-react";
+import { Link as LinkIcon, Plus, Sparkles, AlertCircle, CheckCircle2, Wand2, FileText } from "lucide-react";
 
 export default function SaveForm() {
+  const [mode, setMode] = useState<"link" | "note">("link");
   const [url, setUrl] = useState("");
+  const [noteTitle, setNoteTitle] = useState("");
+  const [noteBody, setNoteBody] = useState("");
   const [manualNote, setManualNote] = useState("");
   const [runAI, setRunAI] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -14,7 +17,8 @@ export default function SaveForm() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!url) return;
+    if (mode === "link" && !url) return;
+    if (mode === "note" && !noteBody.trim()) return;
 
     setLoading(true);
     setStatus("saving");
@@ -26,9 +30,10 @@ export default function SaveForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          sourceUrl: url, 
-          rawContent: url, // Required by backend validator
-          type: 'link',
+          sourceUrl: mode === "link" ? url : undefined, 
+          rawContent: mode === "link" ? url : noteBody.trim(), // Required by backend validator
+          type: mode === "link" ? 'link' : 'note',
+          title: mode === "note" && noteTitle.trim() ? noteTitle.trim() : undefined,
           manualNote: manualNote?.trim() ? manualNote.trim() : undefined,
           runAI,
         }),
@@ -44,6 +49,8 @@ export default function SaveForm() {
       setTimeout(() => {
         setStatus("success");
         setUrl("");
+        setNoteTitle("");
+        setNoteBody("");
         setManualNote("");
         setLoading(false);
         setTimeout(() => setStatus("idle"), 4000);
@@ -80,22 +87,75 @@ export default function SaveForm() {
             </div>
             <h2 className="text-3xl font-black text-white tracking-tight">Capture Information</h2>
           </div>
-          <p className="text-slate-400 font-medium text-sm ml-1">Paste any URL and let the engine extract the essence.</p>
+          <p className="text-slate-400 font-medium text-sm ml-1">Save a link or write your own personal note.</p>
         </div>
 
         <form onSubmit={handleSave} className="space-y-6 relative z-30">
-          <div className="relative group z-30">
-            <LinkIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-400 transition-all duration-300 z-10" />
-            <input
-              type="url"
-              placeholder="Paste YouTube, Instagram, or Web Link..."
-              className="input-base w-full pl-14 h-16 text-lg tracking-tight font-medium shadow-inner relative z-30 bg-slate-800/80 focus:bg-slate-800 border-slate-600 focus:border-indigo-400 text-white placeholder-slate-400"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
+          <div className="flex items-center gap-2 p-2 rounded-2xl border border-slate-800 bg-slate-900/40">
+            <button
+              type="button"
+              onClick={() => setMode("link")}
               disabled={loading}
-              required
-            />
+              className={`flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
+                mode === "link"
+                  ? "bg-indigo-600/15 border-indigo-500/40 text-indigo-300"
+                  : "bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700 hover:text-slate-300"
+              }`}
+            >
+              Link
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("note")}
+              disabled={loading}
+              className={`flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
+                mode === "note"
+                  ? "bg-indigo-600/15 border-indigo-500/40 text-indigo-300"
+                  : "bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700 hover:text-slate-300"
+              }`}
+            >
+              Personal Note
+            </button>
           </div>
+
+          {mode === "link" ? (
+            <div className="relative group z-30">
+              <LinkIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-400 transition-all duration-300 z-10" />
+              <input
+                type="url"
+                placeholder="Paste YouTube, Instagram, or Web Link..."
+                className="input-base w-full pl-14 h-16 text-lg tracking-tight font-medium shadow-inner relative z-30 bg-slate-800/80 focus:bg-slate-800 border-slate-600 focus:border-indigo-400 text-white placeholder-slate-400"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                disabled={loading}
+                required
+              />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="relative">
+                <FileText className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="Title (optional)"
+                  className="input-base w-full pl-14 h-14 text-base font-bold shadow-inner bg-slate-800/70 border-slate-700 focus:border-indigo-400 text-white placeholder-slate-500"
+                  value={noteTitle}
+                  onChange={(e) => setNoteTitle(e.target.value)}
+                  disabled={loading}
+                  maxLength={200}
+                />
+              </div>
+              <textarea
+                placeholder="Write your note..."
+                className="input-base w-full min-h-[160px] p-4 bg-slate-800/60 border-slate-700 focus:border-indigo-400 text-white placeholder-slate-500 resize-none"
+                value={noteBody}
+                onChange={(e) => setNoteBody(e.target.value)}
+                disabled={loading}
+                maxLength={10000}
+                required
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em]">
@@ -130,7 +190,7 @@ export default function SaveForm() {
           <motion.button
             whileHover={{ scale: 1.01, boxShadow: "0 20px 40px -15px rgba(79, 70, 229, 0.4)" }}
             whileTap={{ scale: 0.99 }}
-            disabled={loading || !url}
+            disabled={loading || (mode === "link" ? !url : !noteBody.trim())}
             className="btn-primary w-full h-16 text-lg font-black flex items-center justify-center gap-3 disabled:opacity-40 disabled:grayscale transition-all"
           >
             {status === "saving" && <div className="w-6 h-6 border-3 border-white/20 border-t-white rounded-full animate-spin" />}
@@ -154,7 +214,7 @@ export default function SaveForm() {
             >
               <CheckCircle2 className="w-6 h-6 shrink-0" />
               <div>
-                 <div className="text-sm">Link Captured Successfully</div>
+                 <div className="text-sm">{mode === "link" ? "Link Captured Successfully" : "Note Saved Successfully"}</div>
                  <div className="text-[11px] opacity-70 font-medium">
                    {runAI ? "AI analysis is running in the background." : "Saved without AI analysis."}
                  </div>

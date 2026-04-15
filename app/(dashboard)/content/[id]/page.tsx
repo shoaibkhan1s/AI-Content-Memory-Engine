@@ -13,7 +13,10 @@ import {
   Clock,
   Tag,
   Share2,
-  Trash
+  Trash,
+  Save,
+  Pencil,
+  X
 } from "lucide-react";
 
 export default function ContentDetailPage() {
@@ -21,6 +24,13 @@ export default function ContentDetailPage() {
   const router = useRouter();
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editManual, setEditManual] = useState(false);
+  const [manualDraft, setManualDraft] = useState("");
+  const [editBody, setEditBody] = useState(false);
+  const [bodyDraft, setBodyDraft] = useState("");
+  const [editTitle, setEditTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
 
   const fetchDetail = async () => {
     try {
@@ -28,11 +38,34 @@ export default function ContentDetailPage() {
       const data = await res.json();
       if (data.success) {
         setItem(data.data.item);
+        setManualDraft(data.data.item.manualNote || "");
+        setBodyDraft(data.data.item.rawContent || "");
+        setTitleDraft(data.data.item.title || "");
       }
     } catch (err) {
       console.error("Fetch detail error:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateItem = async (payload: any) => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/content/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Update failed");
+      setItem(data.data);
+      return true;
+    } catch (err) {
+      console.error("Update error:", err);
+      return false;
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -109,6 +142,77 @@ export default function ContentDetailPage() {
           <section className="glass p-8 md:p-10 rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-8 relative overflow-hidden">
              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl pointer-events-none" />
              
+             {/* Manual Note */}
+             <div className="space-y-4">
+               <div className="flex items-center justify-between gap-4">
+                 <h2 className="text-xl font-black flex items-center gap-3 text-white">
+                   <Pencil className="w-5 h-5 text-emerald-400" /> Manual Note
+                 </h2>
+                 <div className="flex items-center gap-2">
+                   {!editManual ? (
+                     <button
+                       onClick={() => setEditManual(true)}
+                       className="px-3 h-9 rounded-xl border border-slate-800 bg-slate-900/40 text-slate-300 text-xs font-black uppercase tracking-widest hover:border-slate-700"
+                     >
+                       Edit
+                     </button>
+                   ) : (
+                     <>
+                       <button
+                         onClick={async () => {
+                           const ok = await updateItem({ manualNote: manualDraft });
+                           if (ok) setEditManual(false);
+                         }}
+                         disabled={saving}
+                         className="px-3 h-9 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs font-black uppercase tracking-widest disabled:opacity-50"
+                       >
+                         <Save className="w-4 h-4 inline-block mr-2" />
+                         Save
+                       </button>
+                       <button
+                         onClick={() => {
+                           setManualDraft(item.manualNote || "");
+                           setEditManual(false);
+                         }}
+                         className="px-3 h-9 rounded-xl border border-slate-800 bg-slate-900/40 text-slate-400 text-xs font-black uppercase tracking-widest hover:border-slate-700"
+                       >
+                         <X className="w-4 h-4 inline-block mr-2" />
+                         Cancel
+                       </button>
+                     </>
+                   )}
+                   <button
+                     onClick={async () => {
+                       setManualDraft("");
+                       const ok = await updateItem({ manualNote: "" });
+                       if (ok) setEditManual(false);
+                     }}
+                     disabled={saving}
+                     className="px-3 h-9 rounded-xl border border-red-500/20 bg-red-500/5 text-red-300/80 text-xs font-black uppercase tracking-widest disabled:opacity-50"
+                   >
+                     Delete
+                   </button>
+                 </div>
+               </div>
+
+               {editManual ? (
+                 <textarea
+                   className="input-base w-full min-h-[120px] p-4 bg-slate-900/50 border-slate-800 focus:border-emerald-400 text-white placeholder-slate-600 resize-none"
+                   value={manualDraft}
+                   onChange={(e) => setManualDraft(e.target.value)}
+                   maxLength={2000}
+                   disabled={saving}
+                   placeholder="Write your manual note..."
+                 />
+               ) : (
+                 <div className="text-slate-300 leading-relaxed font-medium whitespace-pre-wrap">
+                   {item.manualNote?.trim()?.length ? item.manualNote : "No manual note yet."}
+                 </div>
+               )}
+             </div>
+
+             <div className="pt-8 border-t border-slate-800/70" />
+
              <div className="space-y-4">
                 <h2 className="text-xl font-black flex items-center gap-3 text-white">
                    <Sparkles className="w-5 h-5 text-indigo-400" /> AI Executive Summary
@@ -131,6 +235,114 @@ export default function ContentDetailPage() {
                 </div>
              </div>
           </section>
+
+          {/* Personal note body editor */}
+          {item.type === "note" && (
+            <section className="glass p-8 md:p-10 rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-6">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-xl font-black flex items-center gap-3 text-white">
+                  <Pencil className="w-5 h-5 text-indigo-300" /> Personal Note
+                </h2>
+                <div className="flex items-center gap-2">
+                  {!editTitle ? (
+                    <button
+                      onClick={() => setEditTitle(true)}
+                      className="px-3 h-9 rounded-xl border border-slate-800 bg-slate-900/40 text-slate-300 text-xs font-black uppercase tracking-widest hover:border-slate-700"
+                    >
+                      Title
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={async () => {
+                          const ok = await updateItem({ title: titleDraft });
+                          if (ok) setEditTitle(false);
+                        }}
+                        disabled={saving}
+                        className="px-3 h-9 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-200 text-xs font-black uppercase tracking-widest disabled:opacity-50"
+                      >
+                        <Save className="w-4 h-4 inline-block mr-2" />
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setTitleDraft(item.title || "");
+                          setEditTitle(false);
+                        }}
+                        className="px-3 h-9 rounded-xl border border-slate-800 bg-slate-900/40 text-slate-400 text-xs font-black uppercase tracking-widest hover:border-slate-700"
+                      >
+                        <X className="w-4 h-4 inline-block mr-2" />
+                        Cancel
+                      </button>
+                    </>
+                  )}
+
+                  {!editBody ? (
+                    <button
+                      onClick={() => setEditBody(true)}
+                      className="px-3 h-9 rounded-xl border border-slate-800 bg-slate-900/40 text-slate-300 text-xs font-black uppercase tracking-widest hover:border-slate-700"
+                    >
+                      Body
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={async () => {
+                          const ok = await updateItem({ rawContent: bodyDraft });
+                          if (ok) setEditBody(false);
+                        }}
+                        disabled={saving}
+                        className="px-3 h-9 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-200 text-xs font-black uppercase tracking-widest disabled:opacity-50"
+                      >
+                        <Save className="w-4 h-4 inline-block mr-2" />
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setBodyDraft(item.rawContent || "");
+                          setEditBody(false);
+                        }}
+                        className="px-3 h-9 rounded-xl border border-slate-800 bg-slate-900/40 text-slate-400 text-xs font-black uppercase tracking-widest hover:border-slate-700"
+                      >
+                        <X className="w-4 h-4 inline-block mr-2" />
+                        Cancel
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {editTitle ? (
+                <input
+                  className="input-base w-full h-12 px-4 bg-slate-900/50 border-slate-800 focus:border-indigo-400 text-white placeholder-slate-600"
+                  value={titleDraft}
+                  onChange={(e) => setTitleDraft(e.target.value)}
+                  maxLength={200}
+                  disabled={saving}
+                  placeholder="Title..."
+                />
+              ) : (
+                <div className="text-sm font-black text-slate-400 uppercase tracking-widest">
+                  {item.title}
+                </div>
+              )}
+
+              {editBody ? (
+                <textarea
+                  className="input-base w-full min-h-[220px] p-4 bg-slate-900/50 border-slate-800 focus:border-indigo-400 text-white placeholder-slate-600 resize-none"
+                  value={bodyDraft}
+                  onChange={(e) => setBodyDraft(e.target.value)}
+                  maxLength={10000}
+                  disabled={saving}
+                  placeholder="Write your note..."
+                />
+              ) : (
+                <div className="text-slate-300 leading-relaxed font-medium whitespace-pre-wrap">
+                  {item.rawContent}
+                </div>
+              )}
+            </section>
+          )}
 
           {/* AI Questions */}
           {item.aiQuestions?.length > 0 && (

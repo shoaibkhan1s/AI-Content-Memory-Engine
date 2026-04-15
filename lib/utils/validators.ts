@@ -22,6 +22,7 @@ export const createContentSchema = z.object({
 
 export const updateContentSchema = z.object({
   title: z.string().max(200).optional(),
+  rawContent: z.string().max(10000).optional(),
   summary: z.string().max(2000).optional(),
   category: z.string().max(50).optional(),
   tags: z.array(z.string()).max(20).optional(),
