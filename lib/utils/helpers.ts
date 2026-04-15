@@ -43,6 +43,46 @@ export function detectContentType(url: string): string {
   return "link";
 }
 
+function extractYouTubeVideoId(url: string): string | null {
+  try {
+    // youtu.be/<id>
+    if (url.includes("youtu.be/")) {
+      const id = url.split("youtu.be/")[1]?.split(/[?&/]/)?.[0];
+      return id || null;
+    }
+
+    const u = new URL(url);
+    // youtube.com/watch?v=<id>
+    const v = u.searchParams.get("v");
+    if (v) return v;
+
+    // youtube.com/shorts/<id> or /embed/<id>
+    const parts = u.pathname.split("/").filter(Boolean);
+    const shortsIdx = parts.indexOf("shorts");
+    if (shortsIdx >= 0 && parts[shortsIdx + 1]) return parts[shortsIdx + 1];
+    const embedIdx = parts.indexOf("embed");
+    if (embedIdx >= 0 && parts[embedIdx + 1]) return parts[embedIdx + 1];
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function getThumbnailUrl(sourceUrl?: string, platform?: string): string | undefined {
+  if (!sourceUrl) return undefined;
+  const p = platform || detectPlatform(sourceUrl);
+
+  if (p === "YouTube") {
+    const id = extractYouTubeVideoId(sourceUrl);
+    if (!id) return undefined;
+    // Prefer HQ; YouTube will serve best available.
+    return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+  }
+
+  return undefined;
+}
+
 export function getCategoryColor(category: string): string {
   const colors: Record<string, string> = {
     Coding: "blue",

@@ -3,6 +3,7 @@ import ContentItem from "@/lib/db/models/ContentItem";
 import RelatedContent from "@/lib/db/models/RelatedContent";
 import { getGeminiModel, getEmbeddingModel } from "./gemini";
 import { buildProcessingPrompt } from "./prompts";
+import { groqGenerateJson } from "./groq";
 
 // ─── Cosine Similarity ───────────────────────────────────
 // Measures how similar two vectors (embeddings) are
@@ -19,7 +20,9 @@ function cosineSimilarity(a: number[], b: number[]): number {
 
 // ─── Fetch URL Metadata ───────────────────────────────────
 // Gets title and description from any URL using Open Graph tags
-async function fetchUrlMetadata(url: string): Promise<{ title?: string; description?: string }> {
+async function fetchUrlMetadata(
+  url: string
+): Promise<{ title?: string; description?: string; image?: string }> {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0" },  // Pretend to be a browser
@@ -37,9 +40,14 @@ async function fetchUrlMetadata(url: string): Promise<{ title?: string; descript
       html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i) ||
       html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
 
+    const imageMatch =
+      html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i);
+
     return {
       title: titleMatch?.[1]?.trim(),
       description: descMatch?.[1]?.trim(),
+      image: imageMatch?.[1]?.trim(),
     };
   } catch {
     return {};  // If fetch fails, just return empty (AI will use rawContent)
@@ -59,6 +67,27 @@ async function generateEmbedding(text: string): Promise<number[]> {
   }
 }
 
+function parseJsonFromModel(text: string) {
+  const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
+  return JSON.parse(cleaned);
+}
+
+async function generateAiJson(prompt: string) {
+  // Primary: Gemini
+  try {
+    const model = getGeminiModel();
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    return parseJsonFromModel(responseText);
+  } catch (err) {
+    console.warn("Gemini generation failed, trying Groq fallback:", err);
+  }
+
+  // Fallback: Groq
+  const groqText = await groqGenerateJson(prompt);
+  return parseJsonFromModel(groqText);
+}
+
 // ─── Main Processing Function ─────────────────────────────
 // This is called from the API route after a content item is saved
 export async function processContent(contentId: string, userId: string) {
@@ -76,11 +105,13 @@ export async function processContent(contentId: string, userId: string) {
     // Step 2: Fetch URL metadata if it's a link
     let urlTitle: string | undefined;
     let urlDescription: string | undefined;
+    let urlImage: string | undefined;
 
     if (content.sourceUrl) {
       const meta = await fetchUrlMetadata(content.sourceUrl);
       urlTitle = meta.title;
       urlDescription = meta.description;
+      urlImage = meta.image;
     }
 
     // Step 3: Build the AI prompt with all available context
@@ -93,20 +124,8 @@ export async function processContent(contentId: string, userId: string) {
       platform: content.sourcePlatform,
     });
 
-    // Step 4: Call Gemini and parse the JSON response
-    const model = getGeminiModel();
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-    
-    let aiData: any;
-    try {
-      // Clean the response: remove markdown code blocks if present
-      const cleaned = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-      aiData = JSON.parse(cleaned);
-    } catch {
-      console.error("Gemini Raw Response:", responseText); // Log raw for debugging
-      throw new Error("Gemini returned invalid JSON structure");
-    }
+    // Step 4: Call AI (Gemini primary, Groq fallback) and parse JSON response
+    const aiData: any = await generateAiJson(prompt);
     if (!aiData) throw new Error("Empty AI response");
 
     // Step 5: Generate embedding for semantic search
@@ -123,6 +142,9 @@ export async function processContent(contentId: string, userId: string) {
     content.aiQuestions = aiData.questions || [];
     content.importanceScore = aiData.importanceScore || 5;
     content.embedding = embedding;
+    if (!content.thumbnailUrl && urlImage) {
+      content.thumbnailUrl = urlImage;
+    }
     content.processingStatus = "done";
     await content.save();
 

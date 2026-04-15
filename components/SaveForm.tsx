@@ -6,6 +6,8 @@ import { Link as LinkIcon, Plus, Sparkles, AlertCircle, CheckCircle2, Wand2 } fr
 
 export default function SaveForm() {
   const [url, setUrl] = useState("");
+  const [manualNote, setManualNote] = useState("");
+  const [runAI, setRunAI] = useState(true);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<"idle" | "saving" | "processing" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -26,29 +28,23 @@ export default function SaveForm() {
         body: JSON.stringify({ 
           sourceUrl: url, 
           rawContent: url, // Required by backend validator
-          type: 'link' 
+          type: 'link',
+          manualNote: manualNote?.trim() ? manualNote.trim() : undefined,
+          runAI,
         }),
       });
 
       const saveData = await saveRes.json();
       if (!saveRes.ok) throw new Error(saveData.error);
 
-      // Step 2: Trigger/Inform user AI is processing
-      setStatus("processing");
-      
-      // Step 3: Call AI processing route (trigger background job)
-      const aiRes = await fetch("/api/ai/process", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contentId: saveData.data._id }),
-      });
-
-      if (!aiRes.ok) console.warn("AI processing background start failed");
+      // Step 2: Inform user AI is processing only if enabled
+      setStatus(runAI ? "processing" : "success");
 
       // Visual feedback timing
       setTimeout(() => {
         setStatus("success");
         setUrl("");
+        setManualNote("");
         setLoading(false);
         setTimeout(() => setStatus("idle"), 4000);
       }, 1500);
@@ -101,6 +97,36 @@ export default function SaveForm() {
             />
           </div>
 
+          <div className="space-y-2">
+            <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em]">
+              Manual Note (optional)
+            </div>
+            <textarea
+              placeholder="Add your own context, why you saved it, key takeaways..."
+              className="input-base w-full min-h-[110px] p-4 bg-slate-800/60 border-slate-700 focus:border-indigo-400 text-white placeholder-slate-500 resize-none"
+              value={manualNote}
+              onChange={(e) => setManualNote(e.target.value)}
+              disabled={loading}
+              maxLength={2000}
+            />
+          </div>
+
+          <label className="flex items-center justify-between gap-4 px-5 py-4 rounded-2xl border border-slate-800 bg-slate-900/40">
+            <div className="space-y-0.5">
+              <div className="text-xs font-black text-slate-200 uppercase tracking-widest">Run AI analysis</div>
+              <div className="text-[11px] text-slate-500 font-medium">
+                Only runs when you save (never on refresh).
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-indigo-500"
+              checked={runAI}
+              onChange={(e) => setRunAI(e.target.checked)}
+              disabled={loading}
+            />
+          </label>
+
           <motion.button
             whileHover={{ scale: 1.01, boxShadow: "0 20px 40px -15px rgba(79, 70, 229, 0.4)" }}
             whileTap={{ scale: 0.99 }}
@@ -129,7 +155,9 @@ export default function SaveForm() {
               <CheckCircle2 className="w-6 h-6 shrink-0" />
               <div>
                  <div className="text-sm">Link Captured Successfully</div>
-                 <div className="text-[11px] opacity-70 font-medium">AI analysis is running in the background.</div>
+                 <div className="text-[11px] opacity-70 font-medium">
+                   {runAI ? "AI analysis is running in the background." : "Saved without AI analysis."}
+                 </div>
               </div>
             </motion.div>
           )}

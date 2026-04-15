@@ -5,6 +5,7 @@ export interface IContentItem extends Document {
   type: 'youtube' | 'instagram' | 'link' | 'note' | 'idea' | 'snippet';
   sourceUrl?: string;
   sourcePlatform?: string;
+  thumbnailUrl?: string;
   title: string;
   rawContent: string;
   summary: string;
@@ -37,6 +38,7 @@ const ContentItemSchema = new Schema<IContentItem>({
   },
   sourceUrl: String,
   sourcePlatform: String,
+  thumbnailUrl: String,
 
   title: {
     type: String,

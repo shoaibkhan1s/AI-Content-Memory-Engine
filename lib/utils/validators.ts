@@ -17,6 +17,7 @@ export const createContentSchema = z.object({
   rawContent: z.string().min(1).max(10000),
   title: z.string().max(200).optional(),
   manualNote: z.string().max(2000).optional(),
+  runAI: z.boolean().optional(),
 });
 
 export const updateContentSchema = z.object({

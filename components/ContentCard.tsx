@@ -28,6 +28,7 @@ interface ContentCardProps {
     importanceScore: number;
     sourcePlatform?: string;
     sourceUrl?: string; // Added to enable Visit Source link
+    thumbnailUrl?: string;
   };
 }
 
@@ -55,6 +56,22 @@ export default function ContentCard({ item }: ContentCardProps) {
              transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
              className="w-1/2 h-full bg-indigo-300"
           />
+        </div>
+      )}
+
+      {/* Thumbnail */}
+      {item.thumbnailUrl && (
+        <div className="mb-5 -mt-2">
+          <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-slate-800 bg-slate-950/40">
+            <img
+              src={item.thumbnailUrl}
+              alt={item.title}
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+          </div>
         </div>
       )}
 

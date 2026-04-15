@@ -4,7 +4,7 @@ import ContentItem from "@/lib/db/models/ContentItem";
 import { requireAuth } from "@/lib/auth/middleware";
 
 import { createContentSchema } from "@/lib/utils/validators";
-import { detectContentType, detectPlatform } from "@/lib/utils/helpers";
+import { detectContentType, detectPlatform, getThumbnailUrl } from "@/lib/utils/helpers";
 import ReviewState from "@/lib/db/models/ReviewState";
 import ActivityLog from "@/lib/db/models/ActivityLog";
 import { waitUntil } from "@vercel/functions";
@@ -113,7 +113,7 @@ try{
         return NextResponse.json({ success: false,error: parsed.error.issues[0].message},{status: 400})
     }
 
-    const {type,sourceUrl,rawContent,manualNote} = parsed.data
+    const { type, sourceUrl, rawContent, manualNote, runAI } = parsed.data
 
     if (!rawContent || rawContent.trim().length===0) {
         return NextResponse.json({
@@ -137,10 +137,12 @@ try{
 
     let detectedType = type
     let sourcePlatform = ""
+    let thumbnailUrl: string | undefined;
     if (sourceUrl) {
         detectedType = detectContentType(sourceUrl) as any;
 
         sourcePlatform = detectPlatform(sourceUrl)
+        thumbnailUrl = getThumbnailUrl(sourceUrl, sourcePlatform);
     }
 
     const safeContent = rawContent || "";
@@ -151,6 +153,7 @@ try{
         type: detectedType,
         sourceUrl,
         sourcePlatform,
+        thumbnailUrl,
         title,
         rawContent,
         manualNote,
@@ -168,7 +171,13 @@ await ReviewState.create({
       metadata: { type: detectedType, platform: sourcePlatform },
     });
 
-    waitUntil(processContent(contentItem._id.toString(),user.userId).catch(err=> console.error("Background AI processing failed:", err)))
+    if (runAI !== false) {
+      waitUntil(
+        processContent(contentItem._id.toString(), user.userId).catch((err) =>
+          console.error("Background AI processing failed:", err)
+        )
+      );
+    }
 
  return NextResponse.json(
       { success: true, data: contentItem },

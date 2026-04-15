@@ -9,6 +9,7 @@ export interface ContentItem {
     type: ContentType,
     sourceUrl?: string,
     sourcePlatform?: string,
+    thumbnailUrl?: string,
     title: string,
     rawContent: string,
     summary: string,
