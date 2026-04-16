@@ -40,6 +40,13 @@ export async function POST(req: NextRequest) {
         { status: 401 }
       );
     }
+
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        { success: false, error: "Please verify your email before logging in." },
+        { status: 403 }
+      );
+    }
     // Step 5: Create JWT token
     const token = signToken({
       userId: user._id.toString(),

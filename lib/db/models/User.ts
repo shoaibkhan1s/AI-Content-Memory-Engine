@@ -5,6 +5,9 @@ export interface IUser extends Document{
   email: string
   passwordHash: string,
   createdAt: Date;
+  emailVerified: boolean;
+  emailVerificationTokenHash: string | null;
+  emailVerificationExpiresAt: Date | null;
   preferences:{
     defaultCategory: string;
     reminderTime: string;
@@ -38,6 +41,19 @@ const UserSchema = new Schema<IUser>({
     type: Date,
     default: Date.now,
   },
+  emailVerified: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
+  emailVerificationTokenHash: {
+    type: String,
+    default: null,
+  },
+  emailVerificationExpiresAt: {
+    type: Date,
+    default: null,
+  },
   preferences:{
     defaultCategory:{
       type:String,
@@ -53,7 +69,7 @@ const UserSchema = new Schema<IUser>({
     },
     emailReminders:{
       type: Boolean,
-      default: true,
+      default: false,
     }
   },
   reminderSettings:{

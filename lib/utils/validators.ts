@@ -34,3 +34,19 @@ export const updateContentSchema = z.object({
 export const reviewSchema = z.object({
   result: z.enum(["easy", "good", "hard", "forgot"]),
 });
+
+export const userSettingsSchema = z.object({
+  preferences: z
+    .object({
+      reminderTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+      timezone: z.string().max(100).optional(),
+      emailReminders: z.boolean().optional(),
+    })
+    .optional(),
+  reminderSettings: z
+    .object({
+      enabled: z.boolean().optional(),
+      frequency: z.enum(["daily", "every 2 days", "weekly"]).optional(),
+    })
+    .optional(),
+});

@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db/mongoose";
 import User from "@/lib/db/models/User";
-import { signToken } from "@/lib/auth/jwt";
 import { signupSchema } from "@/lib/utils/validators";
+import { generateEmailVerificationToken } from "@/lib/auth/emailVerification";
+import { getAppBaseUrl, getResendClient } from "@/lib/email/resend";
+import { verificationEmailTemplate } from "@/lib/email/templates";
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,17 +41,27 @@ export async function POST(req: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 12);
 
     // Step 6: Create the user in MongoDB
+    const { token, tokenHash, expiresAt } = generateEmailVerificationToken();
     const user = await User.create({
       name,
       email,
       passwordHash,
+      emailVerified: false,
+      emailVerificationTokenHash: tokenHash,
+      emailVerificationExpiresAt: expiresAt,
     });
 
-    // Step 7: Create a JWT token with user info inside it
-    const token = signToken({
-      userId: user._id.toString(),
-      email: user.email,
-      name: user.name,
+    // Step 7: Send verification email (account remains inactive until verified)
+    const baseUrl = getAppBaseUrl();
+    const verifyUrl = `${baseUrl}/verify-email?token=${token}`;
+    const tpl = verificationEmailTemplate({ name: user.name, verifyUrl });
+    const resend = getResendClient();
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || "AI Memory Engine <onboarding@resend.dev>",
+      to: user.email,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
     });
 
     // Step 8: Build the response
@@ -63,20 +75,12 @@ export async function POST(req: NextRequest) {
             email: user.email,
           },
         },
-        message: "Account Create Successfully",
+        message: "Account created. Please verify your email to activate your account.",
       },
       {
         status: 200,
       },
     );
-
-    response.cookies.set("auth_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
-    });
     return response;
   } catch (err) {
     console.log("error in Post route of signup : ", err);

@@ -120,7 +120,7 @@ export async function PUT(
         userId: user.userId,
       },
       { ...parsed.data, updatedAt: new Date() },
-      { new: true },
+      { returnDocument: "after" },
     ).lean();
 
     if (!updatedItem) {
@@ -181,7 +181,7 @@ export async function DELETE(
     const item = await ContentItem.findOneAndUpdate(
       { _id: id, userId: user.userId, status: { $ne: "deleted" } },
       { status: "deleted", updatedAt: new Date() },
-      { new: true }
+      { returnDocument: "after" }
     ).lean();
 
     if (!item) {

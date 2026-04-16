@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, 
@@ -16,12 +16,14 @@ import {
   Trash,
   Save,
   Pencil,
-  X
+  X,
+  CheckCircle2
 } from "lucide-react";
 
 export default function ContentDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -31,6 +33,12 @@ export default function ContentDetailPage() {
   const [bodyDraft, setBodyDraft] = useState("");
   const [editTitle, setEditTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
+
+  const [practiceOpen, setPracticeOpen] = useState(false);
+  const [qIndex, setQIndex] = useState(0);
+  const [answerDraft, setAnswerDraft] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewMsg, setReviewMsg] = useState("");
 
   const fetchDetail = async () => {
     try {
@@ -72,6 +80,35 @@ export default function ContentDetailPage() {
   useEffect(() => {
     fetchDetail();
   }, [id]);
+
+  useEffect(() => {
+    if (searchParams.get("review") === "1") {
+      setPracticeOpen(true);
+    }
+  }, [searchParams]);
+
+  const submitReview = async (result: "easy" | "good" | "hard" | "forgot") => {
+    if (!id) return;
+    setReviewSubmitting(true);
+    setReviewMsg("");
+    try {
+      const res = await fetch("/api/review/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contentId: id, result }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Failed to submit review");
+      setReviewMsg("Review saved");
+      // Move to next question
+      setAnswerDraft("");
+      setQIndex((i) => i + 1);
+    } catch (err: any) {
+      setReviewMsg(err.message || "Failed to submit review");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
@@ -364,6 +401,121 @@ export default function ContentDetailPage() {
                </div>
             </section>
           )}
+
+          {/* Recall Practice */}
+          {practiceOpen && (
+            <section className="glass p-8 md:p-10 rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <h2 className="text-xl font-black flex items-center gap-3 text-white">
+                    <Brain className="w-6 h-6 text-indigo-400" /> Recall Practice
+                  </h2>
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    Use the question, answer from memory, then self-grade
+                  </div>
+                </div>
+                <button
+                  onClick={() => setPracticeOpen(false)}
+                  className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {reviewMsg && (
+                <div
+                  className={`px-4 py-3 rounded-2xl border text-sm font-bold ${
+                    reviewMsg === "Review saved"
+                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                      : "bg-red-500/10 border-red-500/20 text-red-400"
+                  }`}
+                >
+                  {reviewMsg}
+                </div>
+              )}
+
+              {item.aiQuestions?.length ? (
+                qIndex >= item.aiQuestions.length ? (
+                  <div className="p-6 rounded-3xl border border-slate-800 bg-slate-900/40 space-y-3">
+                    <div className="flex items-center gap-2 text-emerald-400 font-black">
+                      <CheckCircle2 className="w-5 h-5" /> Session complete
+                    </div>
+                    <div className="text-slate-400 font-medium">
+                      You’ve gone through all AI questions for this item.
+                    </div>
+                    <button
+                      onClick={() => {
+                        setQIndex(0);
+                        setAnswerDraft("");
+                      }}
+                      className="btn-ghost"
+                    >
+                      Restart
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="p-6 rounded-3xl border border-slate-800 bg-slate-900/40 space-y-3">
+                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em]">
+                        Question {qIndex + 1} / {item.aiQuestions.length}
+                      </div>
+                      <div className="text-slate-200 font-black text-lg leading-snug">
+                        {item.aiQuestions[qIndex]}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em]">
+                        Your answer (not saved)
+                      </div>
+                      <textarea
+                        className="input-base w-full min-h-[160px] p-4 bg-slate-900/50 border-slate-800 focus:border-indigo-400 text-white placeholder-slate-600 resize-none"
+                        value={answerDraft}
+                        onChange={(e) => setAnswerDraft(e.target.value)}
+                        placeholder="Type your answer from memory…"
+                        disabled={reviewSubmitting}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <button
+                        onClick={() => submitReview("forgot")}
+                        disabled={reviewSubmitting}
+                        className="h-12 rounded-2xl border border-red-500/25 bg-red-500/5 text-red-300 font-black uppercase tracking-widest text-xs disabled:opacity-50"
+                      >
+                        Forgot
+                      </button>
+                      <button
+                        onClick={() => submitReview("hard")}
+                        disabled={reviewSubmitting}
+                        className="h-12 rounded-2xl border border-amber-500/25 bg-amber-500/5 text-amber-200 font-black uppercase tracking-widest text-xs disabled:opacity-50"
+                      >
+                        Hard
+                      </button>
+                      <button
+                        onClick={() => submitReview("good")}
+                        disabled={reviewSubmitting}
+                        className="h-12 rounded-2xl border border-indigo-500/25 bg-indigo-500/10 text-indigo-200 font-black uppercase tracking-widest text-xs disabled:opacity-50"
+                      >
+                        Good
+                      </button>
+                      <button
+                        onClick={() => submitReview("easy")}
+                        disabled={reviewSubmitting}
+                        className="h-12 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 text-emerald-200 font-black uppercase tracking-widest text-xs disabled:opacity-50"
+                      >
+                        Easy
+                      </button>
+                    </div>
+                  </>
+                )
+              ) : (
+                <div className="text-slate-400 font-medium">
+                  No AI questions available yet for this item.
+                </div>
+              )}
+            </section>
+          )}
         </div>
 
         {/* Sidebar info */}
@@ -389,7 +541,15 @@ export default function ContentDetailPage() {
                     </div>
                  </div>
 
-                 <button className="btn-primary w-full h-14 font-black flex items-center justify-center gap-3">
+                 <button
+                   onClick={() => {
+                     setPracticeOpen(true);
+                     setReviewMsg("");
+                     setQIndex(0);
+                     setAnswerDraft("");
+                   }}
+                   className="btn-primary w-full h-14 font-black flex items-center justify-center gap-3"
+                 >
                     <Brain className="w-5 h-5" /> Start Recall Practice
                  </button>
               </div>

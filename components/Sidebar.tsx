@@ -20,6 +20,7 @@ const navItems = [
   { name: "Knowledge Library", href: "/library", icon: Library },
   { name: "Capture Link", href: "/save", icon: PlusCircle },
   { name: "Semantic Search", href: "/search", icon: Search },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export default function Sidebar() {

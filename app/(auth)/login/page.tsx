@@ -10,6 +10,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -19,6 +20,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setInfo("");
 
     try {
       const res = await fetch("/api/auth/login", {
@@ -33,6 +35,9 @@ export default function LoginPage() {
         router.push("/");
       } else {
         setError(data.error || "Invalid login credentials");
+        if ((data.error || "").toLowerCase().includes("verify your email")) {
+          setInfo("Didn’t get the email? You can resend verification from the signup page for now.");
+        }
       }
     } catch (err) {
       setError("Something went wrong. Please try again.");
@@ -66,6 +71,15 @@ export default function LoginPage() {
         </div>
 
         <div className="glass p-8 rounded-3xl shadow-2xl relative">
+          {info && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 px-4 py-3 rounded-xl mb-6 text-sm font-medium"
+            >
+              {info}
+            </motion.div>
+          )}
           {error && (
             <motion.div 
               initial={{ opacity: 0, y: -10 }}

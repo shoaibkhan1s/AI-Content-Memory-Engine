@@ -4,7 +4,7 @@ export interface IReviewState extends Document{
   contentId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   nextReviewDate: Date;
-  lastReviewDate: Date;
+  lastReviewDate: Date | null;
   recallCount: number;
   recallStrength: number;
   interval: number;

@@ -10,6 +10,7 @@ export default function SignupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,6 +21,7 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess("");
 
     try {
       const res = await fetch("/api/auth/signup", {
@@ -31,7 +33,7 @@ export default function SignupPage() {
       const data = await res.json();
 
       if (data.success) {
-        router.push("/");
+        setSuccess(data.message || "Account created. Please verify your email to activate your account.");
       } else {
         setError(data.error || "Failed to create account");
       }
@@ -69,6 +71,22 @@ export default function SignupPage() {
         </div>
 
         <div className="glass p-8 rounded-3xl shadow-2xl relative">
+          {success && (
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-3 rounded-xl mb-6 text-sm font-medium"
+            >
+              {success}
+              <div className="mt-2 text-[12px] text-emerald-300/80 font-semibold">
+                After verifying, you can{" "}
+                <Link href="/login" className="underline underline-offset-4">
+                  sign in
+                </Link>
+                .
+              </div>
+            </motion.div>
+          )}
           {error && (
             <motion.div 
               initial={{ opacity: 0, x: -10 }}

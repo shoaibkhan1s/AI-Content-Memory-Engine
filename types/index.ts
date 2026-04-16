@@ -32,11 +32,13 @@ export interface ReviewState{
   contentId: string;
   userId: string;
   nextReviewDate: string;
-  lastReviewedAt: string | null;
+  lastReviewDate: string | null;
   recallCount: number;
   recallStrength: number;
   interval: number;
   easeFactor: number;
+  reminderSentAt?: string | null;
+  reviewHistory?: { reviewedAt: string; result: ReviewResult; strength: number }[];
   isCompleted: boolean;
 }
 
