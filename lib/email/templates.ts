@@ -3,7 +3,7 @@ export function verificationEmailTemplate(params: { name: string; verifyUrl: str
   const safeName = name?.trim() || "there";
 
   return {
-    subject: "Verify your email for AI Content Memory Engine",
+    subject: "Verify your email for Recallify",
     html: `
       <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height: 1.5; color: #0f172a;">
         <h2 style="margin: 0 0 12px;">Hi ${safeName},</h2>
@@ -33,12 +33,12 @@ export function resetPasswordEmailTemplate(params: { name: string; resetUrl: str
   const safeName = name?.trim() || "there";
 
   return {
-    subject: "Reset your password for Antigravity",
+    subject: "Reset your password for Recallify",
     html: `
       <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height: 1.5; color: #0f172a;">
         <h2 style="margin: 0 0 12px;">Hi ${safeName},</h2>
         <p style="margin: 0 0 12px;">
-          You requested a password reset for your Antigravity account.
+          You requested a password reset for your Recallify account.
         </p>
         <p style="margin: 0 0 16px;">
           <a href="${resetUrl}" style="display:inline-block; background:#4f46e5; color:white; text-decoration:none; padding:10px 14px; border-radius:10px; font-weight:700;">
@@ -52,7 +52,7 @@ export function resetPasswordEmailTemplate(params: { name: string; resetUrl: str
           If you didn’t request this, you can safely ignore this email.
         </p>
         <p style="margin: 0; color:#64748b; font-size: 12px;">
-          Antigravity Neural Engine
+          Recallify
         </p>
       </div>
     `,
