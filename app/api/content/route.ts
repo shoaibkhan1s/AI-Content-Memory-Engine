@@ -7,7 +7,6 @@ import { createContentSchema } from "@/lib/utils/validators";
 import { detectContentType, detectPlatform, getThumbnailUrl } from "@/lib/utils/helpers";
 import ReviewState from "@/lib/db/models/ReviewState";
 import ActivityLog from "@/lib/db/models/ActivityLog";
-import { waitUntil } from "@vercel/functions";
 import { processContent } from "@/lib/ai/processContent";
 
 

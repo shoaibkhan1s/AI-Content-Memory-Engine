@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import {
   Search,
   X,
@@ -37,13 +37,13 @@ interface CategoryBrowserProps {
 /* ═══════════════════════════════════════════════════════
    Overlay Animations
    ═══════════════════════════════════════════════════════ */
-const overlayVariants = {
+const overlayVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
   exit: { opacity: 0 },
 };
 
-const panelVariants = {
+const panelVariants: Variants = {
   hidden: { opacity: 0, scale: 0.96, y: -10 },
   visible: {
     opacity: 1,
@@ -60,7 +60,7 @@ const panelVariants = {
 };
 
 /* Mobile bottom sheet variant */
-const sheetVariants = {
+const sheetVariants: Variants = {
   hidden: { opacity: 0, y: "100%" },
   visible: {
     opacity: 1,

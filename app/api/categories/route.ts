@@ -37,11 +37,6 @@ export async function GET(req: NextRequest) {
       },
     ]);
 
-    // Backward-compatible flat list
-    const uniqueCategories = categoriesWithCounts
-      .map((c) => c._id)
-      .filter((c) => typeof c === "string" && c.trim().length > 0);
-
     // Enriched list with counts
     const enrichedCategories = categoriesWithCounts
       .filter((c) => typeof c._id === "string" && c._id.trim().length > 0)
@@ -53,8 +48,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: uniqueCategories, // backward compatible
-      categories: enrichedCategories, // new enriched data
+      categories: enrichedCategories,
     });
   } catch (err) {
     console.error("GET /api/categories error:", err);

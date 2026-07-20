@@ -72,11 +72,6 @@ export default function LibraryPage() {
       const data = await res.json();
       if (data.success && Array.isArray(data.categories)) {
         setEnrichedCategories(data.categories);
-      } else if (data.success && Array.isArray(data.data)) {
-        // Fallback for old API shape
-        setEnrichedCategories(
-          data.data.map((name: string) => ({ name, count: 0 }))
-        );
       }
     } catch (err) {
       console.error("Categories fetch error:", err);
