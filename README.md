@@ -11,7 +11,7 @@ A powerful, frictionless personal knowledge base that automatically extracts ins
 - **Production Ready** — Fully dockerized with a highly optimized multi-stage build.
 
 ## 🚀 Live Demo
-*http://recallify-xi.vercel.app*
+*https://recallify-xi.vercel.app*
 
 ## 🛠️ Tech Stack
 - **Frontend/Framework:** Next.js 14 (App Router) & React
