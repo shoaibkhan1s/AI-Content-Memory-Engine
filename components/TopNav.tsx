@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Library,
   PlusCircle,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -31,7 +30,7 @@ export default function TopNav() {
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/user/settings")
+    fetch("/api/user/me")
       .then(async (res) => {
         if (res.ok) {
           const json = await res.json();
@@ -220,15 +219,6 @@ export default function TopNav() {
                         <p className="text-[13px] font-medium text-text-primary truncate">{userEmail}</p>
                       </div>
                       
-                      <Link
-                        href="/settings"
-                        onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-[13px] font-medium text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors mx-1 rounded-md"
-                      >
-                        <Settings className="w-4 h-4" />
-                        Settings
-                      </Link>
-                      
                       <button
                         onClick={() => {
                           setProfileOpen(false);
@@ -349,14 +339,6 @@ export default function TopNav() {
                   </div>
 
                   <div className="border-t border-border mt-6 pt-6 space-y-1">
-                    <Link
-                      href="/settings"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-[15px] font-medium text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors"
-                    >
-                      <Settings className="w-5 h-5" />
-                      Settings
-                    </Link>
                     <button
                       onClick={() => {
                         setMobileOpen(false);

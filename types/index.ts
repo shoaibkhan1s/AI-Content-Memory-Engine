@@ -47,12 +47,6 @@ export interface User{
     name: string,
     email: string,
     createdAt: string,
-     preferences: {
-    defaultCategory: string;
-    reminderTime: string;
-    timezone: string;
-    emailReminders: boolean;
-  };
 }
 
 export interface ApiResponse<T>{

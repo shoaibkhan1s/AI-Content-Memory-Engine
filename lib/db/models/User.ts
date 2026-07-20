@@ -8,17 +8,7 @@ export interface IUser extends Document{
   emailVerified: boolean;
   emailVerificationTokenHash: string | null;
   emailVerificationExpiresAt: Date | null;
-  preferences:{
-    defaultCategory: string;
-    reminderTime: string;
-    timezone: string;
-    emailReminders: boolean;
-  };
-  reminderSettings: {
-    enabled: boolean;
-    frequency: 'daily' | 'every 2 Days' | 'weekly';
-    lastReminderSentAt: Date | null;
-  };
+
   resetPasswordTokenHash: string | null;
   resetPasswordExpiresAt: Date | null;
 }
@@ -56,39 +46,7 @@ const UserSchema = new Schema<IUser>({
     type: Date,
     default: null,
   },
-  preferences:{
-    defaultCategory:{
-      type:String,
-      default: 'General',
-    },
-    reminderTime:{
-      type: String,
-      default: '09:00',
-    },
-    timezone:{
-      type: String,
-      default:'Asia/Kolkata',
-    },
-    emailReminders:{
-      type: Boolean,
-      default: false,
-    }
-  },
-  reminderSettings:{
-    enabled:{
-      type: Boolean,
-      default: true,
-    },
-    frequency:{
-      type: String,
-      enum: ['daily','every 2 days','weekly'],
-      default: "daily",
-    },
-    lastReminderSentAt:{
-      type: Date,
-      default: null
-    },
-  },
+
   resetPasswordTokenHash: {
     type: String,
     default: null,
